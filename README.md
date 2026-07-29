@@ -36,7 +36,7 @@ kubectl exec kafka-0 -n openfinance -- /opt/kafka/bin/kafka-topics.sh \
 kubectl apply -f src/k8s/03-producer.yaml
 kubectl apply -f src/k8s/04-consumer.yaml
 
-# 6. Verificar
+# 5. Verificar
 kubectl logs -n openfinance -l app=producer --tail=5
 kubectl logs -n openfinance -l app=consumer --tail=5
 ```
