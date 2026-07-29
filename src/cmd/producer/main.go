@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"log/slog"
 	"math/rand"
+	"os"
 	"time"
 
 	"github.com/IBM/sarama"
@@ -25,7 +26,12 @@ func main() {
 	c.Producer.RequiredAcks = sarama.WaitForAll
 	c.Producer.Idempotent = true
 
-	producer, err := sarama.NewAsyncProducer([]string{"localhost:9092"}, c)
+	bootstrapServers := os.Getenv("KAFKA_BOOTSTRAP_SERVERS")
+	if bootstrapServers == "" {
+		bootstrapServers = "localhost:9092"
+	}
+
+	producer, err := sarama.NewAsyncProducer([]string{bootstrapServers}, c)
 	if err != nil {
 		panic(err)
 	}

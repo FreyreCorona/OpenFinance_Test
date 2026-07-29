@@ -18,8 +18,18 @@ func main() {
 	config.Consumer.Offsets.AutoCommit.Enable = false
 	config.Consumer.Group.Rebalance.GroupStrategies = []sarama.BalanceStrategy{sarama.NewBalanceStrategyRoundRobin()}
 
+	kafkaBrokers := os.Getenv("KAFKA_BOOTSTRAP_SERVERS")
+	if kafkaBrokers == "" {
+		kafkaBrokers = "localhost:9092"
+	}
+
+	redisAddr := os.Getenv("REDIS_ADDR")
+	if redisAddr == "" {
+		redisAddr = "localhost:6379"
+	}
+
 	rc := redis.NewClient(&redis.Options{
-		Addr: "localhost:6379",
+		Addr: redisAddr,
 	})
 
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt, os.Kill)
@@ -34,7 +44,7 @@ func main() {
 	store := idempotency.NewRedisStore(rc, 5*time.Minute)
 	handler := kafka.NewHandler(store)
 
-	client, err := sarama.NewConsumerGroup([]string{"localhost:9092"}, "antifraude", config)
+	client, err := sarama.NewConsumerGroup([]string{kafkaBrokers}, "antifraude", config)
 	if err != nil {
 		panic(err)
 	}
