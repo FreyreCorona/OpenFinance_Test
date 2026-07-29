@@ -7,7 +7,7 @@
 
 | File | Description |
 |---|---|
-| `responses.md` | Answers to technical questions
+| `Respostas.md` | Answers to technical questions
 
 
 ## Replicate locally
