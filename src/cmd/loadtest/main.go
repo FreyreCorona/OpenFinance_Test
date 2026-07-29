@@ -30,6 +30,7 @@ func main() {
 	var sent, duplicates int
 	ticker := time.NewTicker(30 * time.Millisecond)
 	start := time.Now()
+	lastLog := time.Now()
 
 	for {
 		select {
@@ -57,6 +58,11 @@ func main() {
 				Value: sarama.ByteEncoder(msg),
 			})
 			sent++
+
+			if time.Since(lastLog) >= 5*time.Second {
+				fmt.Printf("sent %d | duplicates %d | rate %.0f/s\n", sent, duplicates, float64(sent)/time.Since(start).Seconds())
+				lastLog = time.Now()
+			}
 		}
 	}
 }
