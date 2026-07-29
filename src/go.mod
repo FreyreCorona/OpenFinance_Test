@@ -3,7 +3,12 @@ module github.com/freyrecorona/openfinance_test
 go 1.26.5
 
 require (
-	github.com/IBM/sarama v1.60.0 // indirect
+	github.com/IBM/sarama v1.60.0
+	github.com/redis/go-redis/v9 v9.21.0
+)
+
+require (
+	github.com/cespare/xxhash/v2 v2.3.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/eapache/go-resiliency v1.7.0 // indirect
 	github.com/hashicorp/go-uuid v1.0.3 // indirect
@@ -15,6 +20,7 @@ require (
 	github.com/klauspost/compress v1.19.0 // indirect
 	github.com/pierrec/lz4/v4 v4.1.27 // indirect
 	github.com/rcrowley/go-metrics v0.0.0-20250401214520-65e299d6c5c9 // indirect
+	go.uber.org/atomic v1.11.0 // indirect
 	golang.org/x/crypto v0.54.0 // indirect
 	golang.org/x/net v0.57.0 // indirect
 	golang.org/x/sys v0.47.0 // indirect

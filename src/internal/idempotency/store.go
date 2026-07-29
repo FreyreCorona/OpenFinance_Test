@@ -1,36 +1,38 @@
 package idempotency
 
-import "sync"
+import (
+	"context"
+	"time"
+
+	"github.com/redis/go-redis/v9"
+)
 
 type Store interface {
-	Exists(key string) bool
-	Mark(key string)
-	UnMark(key string)
+	Exists(ctx context.Context, key string) bool
+	Mark(ctx context.Context, key string)
+	UnMark(ctx context.Context, key string)
 }
 
-type MemoryStore struct {
-	mu    sync.Mutex
-	items map[string]bool
+type RedisStore struct {
+	client *redis.Client
+	ttl    time.Duration
 }
 
-func NewMemoryStore() *MemoryStore {
-	return &MemoryStore{items: make(map[string]bool)}
+func NewRedisStore(c *redis.Client, ttl time.Duration) *RedisStore {
+	return &RedisStore{
+		client: c,
+		ttl:    ttl,
+	}
 }
 
-func (s *MemoryStore) Exists(key string) bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.items[key]
+func (s *RedisStore) Exists(ctx context.Context, key string) bool {
+	return s.client.Exists(ctx, key).Val() == 1
 }
 
-func (s *MemoryStore) Mark(key string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	s.items[key] = true
+func (s *RedisStore) Mark(ctx context.Context, key string) {
+	s.client.SetNX(ctx, key, true, s.ttl)
 }
 
-func (s *MemoryStore) UnMark(key string) {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	delete(s.items, key)
+func (s *RedisStore) UnMark(ctx context.Context, key string) {
+	s.client.Del(ctx, key)
 }
