@@ -29,7 +29,7 @@ func (h *Handler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama
 			continue
 		}
 
-		if h.store.Exists(event.TransactionID) {
+		if h.store.Exists(session.Context(), event.TransactionID) {
 			slog.Debug("duplicate event skipped", "transaction_id", event.TransactionID)
 			session.MarkMessage(msg, "")
 			continue
@@ -38,7 +38,7 @@ func (h *Handler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama
 		slog.Info("processing", "transaction_id", event.TransactionID, "status", event.Status)
 		time.Sleep(10 * time.Millisecond) // simulate processing
 
-		h.store.Mark(event.TransactionID)
+		h.store.Mark(session.Context(), event.TransactionID)
 		session.MarkMessage(msg, "")
 	}
 	return nil
