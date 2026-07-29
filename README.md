@@ -1,17 +1,47 @@
 # Teste Tecnico - Backend Go
 
-**Candidate:** Einier Freyre  
-**Date:** Julio 2026
+**Cliente:** Einier Freyre  
+**Data:** Julio 2026
 
-## Content 
+## Conteúdo do repositório
 
-| File | Description |
+| Arquivo | Descrição |
 |---|---|
-| `Respostas.md` | Answers to technical questions
+| `Respostas.md` | Respostas do teste técnico |
+| `src/cmd/consumer/` | Consumidor idempotente em Go |
+| `src/cmd/producer/` | Produtor assíncrono de eventos |
+| `src/internal/` | Pacotes internos (idempotência, modelo, Kafka) |
+| `src/k8s/` | Manifestos Kubernetes |
+| `src/Dockerfile.producer` | Dockerfile do produtor |
+| `src/Dockerfile.consumer` | Dockerfile do consumidor |
 
-
-## Replicate locally
+## Como reproduzir o cenário localmente
 
 ```bash
-# Próximamente...
+# 1. Iniciar minikube
+minikube start --cpus=4 --memory=8192
+
+# 2. Namespace e infraestrutura
+kubectl apply -f src/k8s/00-namespace.yaml
+kubectl apply -f src/k8s/01-redis.yaml
+kubectl apply -f src/k8s/02-kafka.yaml
+
+# 3. Criar tópico
+kubectl exec kafka-0 -n openfinance -- /opt/kafka/bin/kafka-topics.sh \
+  --create --topic transactions \
+  --bootstrap-server localhost:9092 \
+  --partitions 3 --replication-factor 1
+
+# 4. Build das imagens
+eval $(minikube docker-env)
+docker build -t openfinance/producer:latest -f src/Dockerfile.producer src/
+docker build -t openfinance/consumer:latest -f src/Dockerfile.consumer src/
+
+# 5. Deploy producer e consumer
+kubectl apply -f src/k8s/03-producer.yaml
+kubectl apply -f src/k8s/04-consumer.yaml
+
+# 6. Verificar
+kubectl logs -n openfinance -l app=producer --tail=5
+kubectl logs -n openfinance -l app=consumer --tail=5
 ```
