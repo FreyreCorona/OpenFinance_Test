@@ -1,0 +1,29 @@
+name: loadtest-build
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'src/cmd/loadtest/**'
+      - 'src/internal/**'
+      - 'src/go.*'
+      - 'src/Dockerfile.loadtest'
+  workflow_dispatch:
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - run: |
+          IMAGE=ghcr.io/freyrecorona/openfinance-test
+          docker build -t $IMAGE/loadtest:latest -f src/Dockerfile.loadtest src/
+          docker push $IMAGE/loadtest:latest
