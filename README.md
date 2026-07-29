@@ -32,10 +32,9 @@ kubectl exec kafka-0 -n openfinance -- /opt/kafka/bin/kafka-topics.sh \
   --bootstrap-server localhost:9092 \
   --partitions 3 --replication-factor 1
 
-# 4. Build das imagens
-eval $(minikube docker-env)
-docker build -t openfinance/producer:latest -f src/Dockerfile.producer src/
-docker build -t openfinance/consumer:latest -f src/Dockerfile.consumer src/
+# 4. Deploy do producer e consumer
+kubectl apply -f src/k8s/03-producer.yaml
+kubectl apply -f src/k8s/04-consumer.yaml
 
 # 5. Deploy producer e consumer
 kubectl apply -f src/k8s/03-producer.yaml

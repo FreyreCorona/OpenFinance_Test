@@ -27,8 +27,8 @@ spec:
                 topologyKey: "kubernetes.io/hostname"
       containers:
         - name: consumer
-          image: openfinance/consumer:latest
-          imagePullPolicy: Never
+          image: ghcr.io/freyrecorona/openfinance-test/consumer:latest
+          imagePullPolicy: Always
           env:
           - name: KAFKA_BOOTSTRAP_SERVERS
             value: "kafka.openfinance.svc.cluster.local:9092"

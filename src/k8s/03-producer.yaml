@@ -15,8 +15,8 @@ spec:
     spec:
       containers:
         - name: producer
-          image: openfinance/producer:latest
-          imagePullPolicy: Never
+          image: ghcr.io/freyrecorona/openfinance-test/producer:latest
+          imagePullPolicy: Always
           env:
           - name: KAFKA_BOOTSTRAP_SERVERS
             value: "kafka.openfinance.svc.cluster.local:9092"
