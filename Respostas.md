@@ -24,3 +24,17 @@ Antes de qualquer ação de mitigação, e conveniente descartar a hipótese H4 
 Escalar o consumer horizontalmente com ```kubectl scale deployment <consumer> --replicas=<N>```, onde N é definido pela taxa de crescimento do lag: x2 se for linearmente, x3 se for exponencialmente. Paralelamente, se há pods com erro ou em loop de rebalance, executo ```kubectl delete pod <pod>``` para que o k8s os recrie — o ```podAntiAffinity``` caso existente no deployment garante que caiam em nodos distintos sem necessidade de intervenção manual nos nodes.
 O risco dessa mitigação é consumir recursos do cluster que talvez não estejam disponíveis, causando contenção com outros serviços. Por isso monitoro ```kubectl top nodes``` durante e após o scale.
 A correção definitiva fica para depois do pico seria revisar a configuração do HPA (```maxReplicas```, ```métricas```), ajustar partições do tópico Kafka, corrigir configmaps (```max.poll.interval.ms, session.timeout.ms```), e criar testes de carga que repliquem o cenário de 3x o tráfego para validar as mudanças. O trade-off é claro: às 03:10 o objetivo é parar o sangramento com uma ação que funcione para múltiplas hipóteses, mesmo que não ataque a causa raiz. Tentar corrigir a raiz agora arrisca prolongar o incidente enquanto o lag e os duplicados crescem.
+
+3 - O antifraude está recebendo eventos duplicados. Explique as causas prováveis nesse tipo de pipeline (produção idempotente, reprocessamento, particionamento, commit de offset) e como você garantiria idempotência e ordem por transação de forma robusta. Se quiser, implemente em Go o núcleo do consumo idempotente.
+
+# Resposta 3
+Temos 3 causas prováveis de eventos duplicados nesse pipeline. 
+### Primeiro:
+O produtor sem idempotência pode gerar duplicatas ao reintentar o envio ao broker após um timeout. 
+### Segundo: 
+O auto-commit com intervalos grandes faz com que o offset seja committado muito depois do processamento — se o consumer crasha, a mensagem já processada é reentregue. ### Terceiro:
+O consumer lê e processa a mensagem, envia ao antifraude, mas crasha antes de commitar o offset. No rebalance, outro consumer assume a partição, lê a mesma mensagem do último offset commitado, e a reenvia ao antifraude.
+Para garantir idempotência, atuo em três camadas. No produtor, configuro ```enable.idempotence=true``` para evitar duplicatas na origem. No consumidor, desativo auto-commit com ```enable.auto.commit=false``` e ```uso commitSync()``` apenas após processar e persistir o resultado.
+Por fim, implemento uma tabela de deduplicação no consumidor indexada por transaction_id. Antes de processar cada mensagem, consulto se aquele transaction_id já foi processado. Se sim, descarto a mensagem e commito o offset. Se não, processo, persisto o resultado, registro o id, e então commito. 
+Isso garante que mesmo com reprocessamento por rebalance, o antifraude nunca recebe o mesmo evento duas vezes.
+Quanto à ordenação, Kafka garante ordem apenas dentro de cada partição. Usar o transaction_id como chave de particionamento garante que todas as mensagens da mesma transação caiam na mesma partição e sejam processadas em ordem. Transações diferentes podem ser processadas em paralelo sem impacto, já que a ordem entre transações distintas não é um requisito de negócio neste cenário.
