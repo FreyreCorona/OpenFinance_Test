@@ -8,6 +8,7 @@ on:
       - 'src/internal/**'
       - 'src/go.*'
       - 'src/Dockerfile.consumer'
+    workflow_dispatch:
 
 jobs:
   build:
@@ -23,5 +24,5 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - run: |
-          docker build -t ghcr.io/${{ github.repository }}/consumer:latest -f src/Dockerfile.consumer src/
-          docker push ghcr.io/${{ github.repository }}/consumer:latest
+          docker build -t ghcr.io/${{ lower(github.repository) }}/consumer:latest -f src/Dockerfile.consumer src/
+          docker push ghcr.io/${{ lower(github.repository) }}/consumer:latest
