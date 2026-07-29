@@ -16,3 +16,11 @@
 
 ### Primeiro sinal de que estou no caminho certo: 
 Se no passo 1 encontro um rollout recente com alteração de configuração crítica (ex: max.poll.interval.ms reduzido) ou um evento ScalingLimited, sei que estou na direção certa — uma causa identificável e com ação clara.
+
+2 - São 03:10 e o lag cresce. O que você faz PRIMEIRO para estabilizar (mitigação) e o que deixa para depois (correção definitiva)? Justifique o trade-off entre estancar o problema agora e resolver a raiz, e explique o risco de cada escolha.
+
+# Resposta 2
+Antes de qualquer ação de mitigação, e conveniente descartar a hipótese H4 consultando as métricas de latência ```p99``` e ```error rate``` do antifraude. Se o downstream está saudável, escalaria o consumer sem risco de piorar. Se estivesse lento, escalar o consumer apenas sobrecarregaria ainda mais — nesse caso, a mitigação seria escalar ambos proporcionalmente.
+Escalar o consumer horizontalmente com ```kubectl scale deployment <consumer> --replicas=<N>```, onde N é definido pela taxa de crescimento do lag: x2 se for linearmente, x3 se for exponencialmente. Paralelamente, se há pods com erro ou em loop de rebalance, executo ```kubectl delete pod <pod>``` para que o k8s os recrie — o ```podAntiAffinity``` caso existente no deployment garante que caiam em nodos distintos sem necessidade de intervenção manual nos nodes.
+O risco dessa mitigação é consumir recursos do cluster que talvez não estejam disponíveis, causando contenção com outros serviços. Por isso monitoro ```kubectl top nodes``` durante e após o scale.
+A correção definitiva fica para depois do pico seria revisar a configuração do HPA (```maxReplicas```, ```métricas```), ajustar partições do tópico Kafka, corrigir configmaps (```max.poll.interval.ms, session.timeout.ms```), e criar testes de carga que repliquem o cenário de 3x o tráfego para validar as mudanças. O trade-off é claro: às 03:10 o objetivo é parar o sangramento com uma ação que funcione para múltiplas hipóteses, mesmo que não ataque a causa raiz. Tentar corrigir a raiz agora arrisca prolongar o incidente enquanto o lag e os duplicados crescem.
