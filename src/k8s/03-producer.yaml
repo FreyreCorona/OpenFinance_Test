@@ -1,0 +1,24 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: producer
+  namespace: openfinance
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: producer
+  template:
+    metadata:
+      labels:
+        app: producer
+    spec:
+      containers:
+        - name: producer
+          image: openfinance/producer:latest
+          imagePullPolicy: Never
+          env:
+          - name: KAFKA_BOOTSTRAP_SERVERS
+            value: "kafka.openfinance.svc.cluster.local:9092"
+          - name: REDIS_ADDR
+            value: "redis.openfinance.svc.cluster.local:6379"
