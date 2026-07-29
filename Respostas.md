@@ -38,3 +38,21 @@ Para garantir idempotência, atuo em três camadas. No produtor, configuro ```en
 Por fim, implemento uma tabela de deduplicação no consumidor indexada por transaction_id. Antes de processar cada mensagem, consulto se aquele transaction_id já foi processado. Se sim, descarto a mensagem e commito o offset. Se não, processo, persisto o resultado, registro o id, e então commito. 
 Isso garante que mesmo com reprocessamento por rebalance, o antifraude nunca recebe o mesmo evento duas vezes.
 Quanto à ordenação, Kafka garante ordem apenas dentro de cada partição. Usar o transaction_id como chave de particionamento garante que todas as mensagens da mesma transação caiam na mesma partição e sejam processadas em ordem. Transações diferentes podem ser processadas em paralelo sem impacto, já que a ordem entre transações distintas não é um requisito de negócio neste cenário.
+
+4 - "Depois do incidente, o que você mudaria para que ele não se repita — ou para detectá-lo em minutos, não em horas? Aponte 2 ou 3 SLIs/alertas que faltavam e o que instrumentaria (logs, métricas, tracing). Considere também backpressure e o comportamento sob 3x de carga."
+
+# Resposta 4
+1. SLIs/alertas que faltavam: taxa de crescimento do lag do consumidor (consumer lag rate), latência p99 do downstream, e taxa de erros/duplicatas nos logs do consumidor.
+2. Instrumentação: Métricas do Prometheus expostas em todos os serviços, logs estruturados (slog) com ```transaction_id``` para correlação, e tracing distribuído (OpenTelemetry) para rastrear onde o tempo é perdido.
+3. Backpressure: Redis como circuit breaker — se o consumidor detectar N timeouts consecutivos no downstream, publica um sinal no Redis que o produtor lê para pausar envios por X segundos. Alternativa: Kafka consumer com max.poll.records dinâmico que reduz quando o lag sobe.
+
+
+5 - Escreva um resumo curto (como você comunicaria ao time e ao gestor durante e após o incidente) e um mini-postmortem: o que aconteceu, impacto, causa provável e ações. Queremos ver clareza, honestidade técnica e responsabilidade sobre o resultado.
+
+# Resposta 5
+Mini-postmortem:
+- O que aconteceu: Campanha de parceiro elevou tráfego em 3x, saturando o consumer e causando lag crescente e duplicatas no antifraude
+- Impacto: Latência p99 de liquidação saltou de 200ms para vários segundos; antifraude recebeu eventos duplicados
+- Causa provável: HPA mal configurado (maxReplicas baixo), produtor sem idempotência, e consumer sem deduplicação por transaction_id
+- Ações tomadas: Escalonamento manual do consumer, bloqueio de rebalanceios com podAntiAffinity, idempotência no producer, dedup no consumer via Redis
+- Ações futuras: Testes de carga obrigatórios antes de campanhas, revisão do HPA, tracing distribuído, e alertas de lag rate
