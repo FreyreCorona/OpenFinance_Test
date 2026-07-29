@@ -24,6 +24,6 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - run: |
-          IMAGE=ghcr.io/${{ github.repository_owner }}/openfinance-test
+          IMAGE=ghcr.io/freyrecorona/openfinance-test
           docker build -t $IMAGE/producer:latest -f src/Dockerfile.producer src/
           docker push $IMAGE/producer:latest
