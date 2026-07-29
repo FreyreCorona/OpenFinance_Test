@@ -56,3 +56,8 @@ Mini-postmortem:
 - Causa provável: HPA mal configurado (maxReplicas baixo), produtor sem idempotência, e consumer sem deduplicação por transaction_id
 - Ações tomadas: Escalonamento manual do consumer, bloqueio de rebalanceios com podAntiAffinity, idempotência no producer, dedup no consumer via Redis
 - Ações futuras: Testes de carga obrigatórios antes de campanhas, revisão do HPA, tracing distribuído, e alertas de lag rate
+
+6 - Explique como você usaria ferramentas de IA para acelerar e melhorar sua execução NESTE cenário: em que tarefas se apoiaria, o que pediria à IA, onde confiaria e onde validaria a saída antes de subir, e quais riscos observaria (alucinação, código inseguro, vazamento de dados sensíveis, LGPD).
+
+# Resposta 6
+Neste cenário, usaria IA principalmente para leitura e resumo de logs do incidente, validação da saída do kubectl describe deployment para identificar rapidamente HPA limitado e eventos de erro, e para uma melhor detecção do incidente como um todo. Confiaria na saída da IA para o resumo de logs e na leitura do describe, pois a IA identifica padrões mais rápido que a leitura manual. Validaria manualmente antes de subir a escrita de boilerplate de novos manifests para correção do erro, bem como a busca de informações online sobre a campanha do parceiro caso informações adicionais sejam requeridas. Quanto aos riscos, sempre cuidaria para não vazar credenciais nos prompts, pediria os comandos para prévia execução pelo time antes de aplicar, não exporia secrets ou variáveis de ambiente sensíveis, e daria preferência a modelos de IA previamente contratados pela empresa em vez de modelos online públicos, já que estes são mais seguros e mantêm os dados apenas na rede empresarial, mitigando riscos de LGPD.
