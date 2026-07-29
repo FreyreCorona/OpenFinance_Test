@@ -8,7 +8,7 @@ on:
       - 'src/internal/**'
       - 'src/go.*'
       - 'src/Dockerfile.consumer'
-    workflow_dispatch:
+  workflow_dispatch:
 
 jobs:
   build:
