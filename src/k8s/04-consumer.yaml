@@ -13,6 +13,18 @@ spec:
       labels:
         app: consumer
     spec:
+      affinity:
+        podAntiAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            - weight: 100
+              podAffinityTerm:
+                labelSelector:
+                  matchExpressions:
+                    - key: app
+                      operator: In
+                      values:
+                        - consumer
+                topologyKey: "kubernetes.io/hostname"
       containers:
         - name: consumer
           image: openfinance/consumer:latest
