@@ -50,7 +50,10 @@ Quanto à ordenação, Kafka garante ordem apenas dentro de cada partição. Usa
 5 - Escreva um resumo curto (como você comunicaria ao time e ao gestor durante e após o incidente) e um mini-postmortem: o que aconteceu, impacto, causa provável e ações. Queremos ver clareza, honestidade técnica e responsabilidade sobre o resultado.
 
 # Resposta 5
-Mini-postmortem:
+## Resumo durante o incidente
+"Estamos com um incidente de sobrecarga no serviço de transações devido a campanha de um parceiro (tráfego 3x acima do normal). Lag de consumo crescente e duplicatas detectadas pelo antifraude. Já escalamos o consumer manualmente e confirmamos que o downstream está saudável. Causa raiz ainda sob investigação. Próxima atualização em 15 minutos."
+
+## Mini-postmortem
 - O que aconteceu: Campanha de parceiro elevou tráfego em 3x, saturando o consumer e causando lag crescente e duplicatas no antifraude
 - Impacto: Latência p99 de liquidação saltou de 200ms para vários segundos; antifraude recebeu eventos duplicados
 - Causa provável: HPA mal configurado (maxReplicas baixo), produtor sem idempotência, e consumer sem deduplicação por transaction_id
