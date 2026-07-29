@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 
 	"github.com/IBM/sarama"
@@ -23,7 +24,7 @@ func main() {
 	rc := redis.NewClient(&redis.Options{Addr: os.Getenv("REDIS_ADDR")})
 	defer rc.Close()
 
-	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
+	ctx, cancel := signal.NotifyContext(context.Background(), syscall.SIGINT, syscall.SIGTERM)
 	defer cancel()
 
 	var sent, duplicates int
