@@ -14,9 +14,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5
-      - run: go mod download
         with:
           go-version-file: src/go.mod
+      - run: go mod download
       - run: go fmt ./...
       - run: go vet ./...
       - run: go test ./...
