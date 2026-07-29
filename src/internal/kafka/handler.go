@@ -22,6 +22,7 @@ func (h *Handler) Setup(sarama.ConsumerGroupSession) error   { return nil }
 func (h *Handler) Cleanup(sarama.ConsumerGroupSession) error { return nil }
 
 func (h *Handler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama.ConsumerGroupClaim) error {
+	var count int
 	for msg := range claim.Messages() {
 		var event transaction.Event
 		if err := json.Unmarshal(msg.Value, &event); err != nil {
@@ -32,6 +33,7 @@ func (h *Handler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama
 		if h.store.Exists(session.Context(), event.TransactionID) {
 			slog.Debug("duplicate event skipped", "transaction_id", event.TransactionID)
 			session.MarkMessage(msg, "")
+			session.Commit()
 			continue
 		}
 
@@ -40,6 +42,10 @@ func (h *Handler) ConsumeClaim(session sarama.ConsumerGroupSession, claim sarama
 
 		h.store.Mark(session.Context(), event.TransactionID)
 		session.MarkMessage(msg, "")
+		count++
+		if count%10 == 0 {
+			session.Commit()
+		}
 	}
 	return nil
 }
